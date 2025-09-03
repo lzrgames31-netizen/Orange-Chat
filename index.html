@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Orange Chat</title>
+  <style>
+    :root {
+      --bg-dark: #1a1a1a;
+      --bg-light: #2a2a2a;
+      --accent: #ff7a00;
+      --text: #ffffff;
+      --radius: 14px;
+    }
+    body {
+      margin: 0;
+      font-family: "Segoe UI", Arial, sans-serif;
+      background: var(--bg-dark);
+      color: var(--text);
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+    header {
+      background: var(--bg-light);
+      padding: 12px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 2px solid var(--accent);
+    }
+    #logo { font-size: 20px; font-weight: bold; color: var(--accent); }
+    .header-buttons button {
+      margin-left: 8px; padding: 7px 12px; border: none; border-radius: var(--radius);
+      background: var(--accent); color: var(--bg-dark); font-weight: bold; cursor: pointer;
+      transition: 0.2s;
+    }
+    .header-buttons button:hover { background: #ff9633; }
+
+    main { flex: 1; display: flex; overflow: hidden; }
+
+    /* ===== Contatos ===== */
+    #contacts {
+      width: 240px; background: var(--bg-light); display: flex; flex-direction: column;
+      border-right: 2px solid var(--accent);
+    }
+    .contacts-header {
+      display: flex; justify-content: space-between; padding: 10px;
+      border-bottom: 1px solid var(--accent);
+    }
+    .contacts-header button {
+      border: none; background: var(--accent); border-radius: var(--radius);
+      cursor: pointer; padding: 6px 10px; font-size: 16px;
+    }
+    #contactsList { list-style: none; margin: 0; padding: 0; overflow-y: auto; flex: 1; }
+    #contactsList li {
+      padding: 12px; cursor: pointer; border-bottom: 1px solid #333;
+      transition: background 0.2s;
+    }
+    #contactsList li:hover { background: #333; }
+    #contactsList li.active { background: var(--accent); color: var(--bg-dark); font-weight: bold; }
+
+    /* ===== Chat ===== */
+    #chatArea { flex: 1; display: flex; flex-direction: column; background: var(--bg-dark); }
+    #messages { flex: 1; padding: 15px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; }
+    .message {
+      padding: 10px 14px; border-radius: var(--radius); max-width: 65%;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.4); animation: fadeIn 0.3s ease;
+    }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+    .me { background: var(--accent); color: var(--bg-dark); align-self: flex-end; border-bottom-right-radius: 4px; }
+    .them { background: #333; color: var(--text); align-self: flex-start; border-bottom-left-radius: 4px; }
+
+    #msgBox {
+      display: flex; padding: 12px; background: var(--bg-light);
+      border-top: 2px solid var(--accent);
+    }
+    #msgInput {
+      flex: 1; padding: 10px; border: none; border-radius: var(--radius);
+      margin-right: 8px; font-size: 14px;
+    }
+    #sendBtn {
+      padding: 10px 14px; border: none; border-radius: var(--radius);
+      background: var(--accent); color: var(--bg-dark);
+      font-weight: bold; cursor: pointer; transition: 0.2s;
+    }
+    #sendBtn:hover { background: #ff9633; }
+
+    /* ===== Modais ===== */
+    .modal {
+      position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(0,0,0,0.6); display: flex; justify-content: center; align-items: center;
+    }
+    .modal.hidden { display: none; }
+    .modal-content {
+      background: var(--bg-light); padding: 20px; border-radius: var(--radius);
+      min-width: 300px; border: 2px solid var(--accent); text-align: center;
+    }
+    .modal-content input {
+      width: 80%; padding: 8px; margin: 8px 0; border: none; border-radius: var(--radius);
+    }
+    .modal-content button {
+      margin: 5px; padding: 8px 12px; border: none; border-radius: var(--radius);
+      background: var(--accent); color: var(--bg-dark); font-weight: bold; cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div id="logo">Orange Chat</div>
+    <div class="header-buttons">
+      <button id="settingsBtn">⚙️</button>
+      <button id="createAccountBtn">Criar Conta</button>
+    </div>
+  </header>
+
+  <main>
+    <aside id="contacts">
+      <div class="contacts-header">
+        <button id="addContactBtn">+</button>
+        <button id="createGroupBtn">G</button>
+      </div>
+      <ul id="contactsList"></ul>
+    </aside>
+
+    <section id="chatArea">
+      <div id="messages"></div>
+      <div id="msgBox">
+        <textarea id="msgInput" placeholder="Digite uma mensagem..."></textarea>
+        <button id="sendBtn">Enviar</button>
+      </div>
+    </section>
+  </main>
+
+  <!-- Modal conta -->
+  <div id="accountModal" class="modal hidden">
+    <div class="modal-content">
+      <h2>Crie sua conta</h2>
+      <input type="text" id="usernameInput" placeholder="Seu nome">
+      <button id="confirmAccountBtn">Confirmar</button>
+    </div>
+  </div>
+
+  <!-- Modal configs -->
+  <div id="settingsModal" class="modal hidden">
+    <div class="modal-content">
+      <h2>⚙️ Configurações</h2>
+      <button id="deleteAccountBtn">🗑️ Deletar conta</button>
+      <button id="deleteMessagesBtn">🧹 Deletar mensagens</button>
+      <button id="toggleThemeBtn">🌙 Mudar tema</button>
+    </div>
+  </div>
+
+  <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+  <script>
+    const SERVER_URL = "http://localhost:3000";
+    const socket = io(SERVER_URL);
+
+    let user = null;
+    let currentChat = null;
+
+    const createAccountBtn = document.getElementById("createAccountBtn");
+    const accountModal = document.getElementById("accountModal");
+    const confirmAccountBtn = document.getElementById("confirmAccountBtn");
+    const logo = document.getElementById("logo");
+
+    createAccountBtn.onclick = () => accountModal.classList.remove("hidden");
+    confirmAccountBtn.onclick = () => {
+      const name = document.getElementById("usernameInput").value.trim();
+      if (!name) return alert("Digite um nome!");
+      const code = Math.floor(1000 + Math.random() * 9000);
+      user = name + "#" + code;
+      logo.textContent = "Orange Chat | " + user;
+      accountModal.classList.add("hidden");
+      socket.emit("register", user);
+    };
+
+    const sendBtn = document.getElementById("sendBtn");
+    const msgInput = document.getElementById("msgInput");
+    const messages = document.getElementById("messages");
+
+    sendBtn.onclick = sendMessage;
+    msgInput.addEventListener("keydown", e => {
+      if (e.key === "Enter" && !e.shiftKey) {
+        e.preventDefault();
+        sendMessage();
+      }
+    });
+
+    function sendMessage() {
+      const text = msgInput.value.trim();
+      if (!text || !user || !currentChat) return;
+      const msgData = { from: user, to: currentChat, text };
+      socket.emit("message", msgData);
+      displayMessage(msgData, true); // mostra só no meu lado
+      msgInput.value = "";
+    }
+
+    function displayMessage(msg, isMe = false) {
+      const div = document.createElement("div");
+      div.classList.add("message");
+      div.classList.add(isMe ? "me" : "them");
+      div.textContent = msg.from + ": " + msg.text;
+      messages.appendChild(div);
+      messages.scrollTo({ top: messages.scrollHeight, behavior: "smooth" });
+    }
+
+    socket.on("message", (msg) => {
+      if (msg.to === user || msg.to === currentChat) {
+        displayMessage(msg, msg.from === user);
+      }
+    });
+
+    const contactsList = document.getElementById("contactsList");
+
+    document.getElementById("addContactBtn").onclick = () => {
+      const tag = prompt("Digite o contato (nome#1234):");
+      if (!tag) return;
+      addContact(tag);
+    };
+
+    document.getElementById("createGroupBtn").onclick = () => {
+      const groupName = prompt("Digite o nome do grupo:");
+      if (!groupName) return;
+      addContact("Grupo: " + groupName);
+    };
+
+    function addContact(tag) {
+      const li = document.createElement("li");
+      li.textContent = tag;
+      li.onclick = () => {
+        currentChat = tag;
+        [...contactsList.children].forEach(el => el.classList.remove("active"));
+        li.classList.add("active");
+        messages.innerHTML = "";
+      };
+      contactsList.appendChild(li);
+    }
+
+    const settingsBtn = document.getElementById("settingsBtn");
+    const settingsModal = document.getElementById("settingsModal");
+    settingsBtn.onclick = () => settingsModal.classList.remove("hidden");
+    settingsModal.onclick = e => { if (e.target === settingsModal) settingsModal.classList.add("hidden"); };
+
+    document.getElementById("deleteAccountBtn").onclick = () => {
+      if (confirm("Deseja deletar a conta?")) {
+        user = null;
+        logo.textContent = "Orange Chat";
+        alert("Conta deletada!");
+      }
+    };
+    document.getElementById("deleteMessagesBtn").onclick = () => messages.innerHTML = "";
+    document.getElementById("toggleThemeBtn").onclick = () => document.body.classList.toggle("light");
+  </script>
+</body>
+</html>
